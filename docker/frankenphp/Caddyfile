@@ -1,0 +1,27 @@
+{
+	# ---- FrankenPHP Worker Mode ----
+	# Boota o public/index.php uma vez e o mantem em memoria, reutilizando o
+	# Kernel do Symfony entre requisicoes. O numero de workers define quantos
+	# Kernels (e conexoes Doctrine persistentes) ficam ativos.
+	frankenphp {
+		worker {
+			file /app/public/index.php
+			num {$FRANKENPHP_NUM_WORKERS:4}
+		}
+	}
+
+	# Traefik faz o TLS na borda; aqui servimos HTTP puro.
+	auto_https off
+
+	# Em producao, desabilite o endpoint de admin do Caddy se nao for usar.
+	# admin off
+}
+
+# Escuta HTTP na 80 (Traefik encaminha para ca).
+:80 {
+	root /app/public
+	encode zstd br gzip
+
+	# php_server usa automaticamente o worker definido no bloco global acima.
+	php_server
+}

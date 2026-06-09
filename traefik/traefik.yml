@@ -1,0 +1,23 @@
+# Config estatica do Traefik (file provider — nao usa o socket Docker).
+# Motivo: o daemon Docker novo exige API >= 1.40 e o provider docker do Traefik
+# negocia 1.24, quebrando a descoberta por labels. O file provider evita isso.
+
+entryPoints:
+  franken:
+    address: ":8082"
+  swoole:
+    address: ":8083"
+
+api:
+  dashboard: true
+  insecure: true   # dashboard em :8080 (apenas PoC local)
+
+providers:
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: true
+
+log:
+  level: INFO
+
+accessLog: {}

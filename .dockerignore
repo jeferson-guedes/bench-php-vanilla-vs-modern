@@ -1,0 +1,8 @@
+**/vendor
+**/var
+**/.git
+**/.env.local
+**/node_modules
+.venv
+bench/results
+*.md

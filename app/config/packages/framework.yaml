@@ -1,0 +1,15 @@
+framework:
+    secret: '%env(APP_SECRET)%'
+    http_method_override: false
+    handle_all_throwables: true
+
+    # API stateless: sem sessao. Critico para Worker Mode / Swoole (sem estado entre requests).
+    session: false
+
+    php_errors:
+        log: true
+
+when@prod:
+    framework:
+        router:
+            strict_requirements: null

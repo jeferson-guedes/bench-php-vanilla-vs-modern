@@ -1,0 +1,26 @@
+# Config dinamica do Traefik (roteamento por entrypoint -> container).
+# Cada cenario tem seu entrypoint dedicado, entao a mesma regra PathPrefix(`/`)
+# nao conflita.
+
+http:
+  routers:
+    frankenphp:
+      rule: "PathPrefix(`/`)"
+      entryPoints:
+        - franken
+      service: frankenphp
+    swoole:
+      rule: "PathPrefix(`/`)"
+      entryPoints:
+        - swoole
+      service: swoole
+
+  services:
+    frankenphp:
+      loadBalancer:
+        servers:
+          - url: "http://frankenphp:80"
+    swoole:
+      loadBalancer:
+        servers:
+          - url: "http://swoole:8000"

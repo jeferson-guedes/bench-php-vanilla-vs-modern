@@ -1,0 +1,129 @@
+name: php-runtimes-benchmark
+
+# =====================================================================
+# Benchmark de 3 arquiteturas PHP rodando o MESMO mini-monolito Symfony:
+#   - Cenario 1  Nginx + PHP-FPM (Opcache + JIT)         -> http://localhost:8081
+#   - Cenario 2  Traefik + FrankenPHP (Worker Mode)       -> http://localhost:8082
+#   - Cenario 3  Traefik + Swoole (assincrono)            -> http://localhost:8083
+#   + MySQL 8 compartilhado                               -> localhost:3306
+#   + Dashboard do Traefik                                -> http://localhost:8080
+# =====================================================================
+
+x-app-env: &app-env
+  APP_ENV: prod
+  APP_DEBUG: 0
+  APP_SECRET: benchmark_super_secret_change_me
+  DATABASE_URL: "mysql://bench:bench@mysql:3306/benchmark?serverVersion=8.0.32&charset=utf8mb4"
+
+services:
+
+  # ------------------------------------------------------------------
+  # Banco de dados compartilhado pelos 3 cenarios
+  # ------------------------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    command:
+      - --max-connections=151          # baixe p/ 20-30 para forcar "Too many connections"
+      - --mysqlx=OFF
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: benchmark
+      MYSQL_USER: bench
+      MYSQL_PASSWORD: bench
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysqldata:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [benchnet]
+
+  # ------------------------------------------------------------------
+  # CENARIO 1: PHP-FPM (Opcache + JIT) + Nginx via Unix socket
+  # ------------------------------------------------------------------
+  fpm:
+    build:
+      context: .
+      dockerfile: docker/fpm/Dockerfile
+    environment: *app-env
+    volumes:
+      - phpsocket:/var/run/php       # socket compartilhado com o Nginx
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks: [benchnet]
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "8081:80"
+    volumes:
+      - ./docker/fpm/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - phpsocket:/var/run/php       # mesmo socket do FPM
+    depends_on:
+      - fpm
+    networks: [benchnet]
+
+  # ------------------------------------------------------------------
+  # CENARIO 2: FrankenPHP (Worker Mode) atras do Traefik -> :8082
+  # ------------------------------------------------------------------
+  frankenphp:
+    build:
+      context: .
+      dockerfile: docker/frankenphp/Dockerfile
+    environment:
+      <<: *app-env
+      # Ativa o runtime FrankenPHP do Symfony (Worker Mode)
+      APP_RUNTIME: 'Runtime\FrankenPhpSymfony\Runtime'
+      FRANKENPHP_NUM_WORKERS: "4"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks: [benchnet]
+
+  # ------------------------------------------------------------------
+  # CENARIO 3: Swoole (assincrono) atras do Traefik -> :8083
+  # ------------------------------------------------------------------
+  swoole:
+    build:
+      context: .
+      dockerfile: docker/swoole/Dockerfile
+    environment:
+      <<: *app-env
+      SWOOLE_HOST: "0.0.0.0"
+      SWOOLE_PORT: "8000"
+      SWOOLE_WORKERS: "4"           # ~= numero de conexoes persistentes no MySQL
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks: [benchnet]
+
+  # ------------------------------------------------------------------
+  # Traefik: Edge Router para os cenarios 2 e 3 (entrypoints dedicados)
+  # ------------------------------------------------------------------
+  traefik:
+    image: traefik:v3.2
+    ports:
+      # OBS: a :8082 do host estava ocupada por um processo local -> FrankenPHP publicado em 8182.
+      - "8182:8082"   # -> FrankenPHP  (acesse http://localhost:8182)
+      - "8083:8083"   # -> Swoole      (acesse http://localhost:8083)
+      - "8180:8080"   # -> Dashboard do Traefik (http://localhost:8180)
+    volumes:
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+    depends_on:
+      - frankenphp
+      - swoole
+    networks: [benchnet]
+
+volumes:
+  mysqldata:
+  phpsocket:
+
+networks:
+  benchnet:
+    driver: bridge

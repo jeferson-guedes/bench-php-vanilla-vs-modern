@@ -1,0 +1,4 @@
+aiohttp>=3.10
+pandas>=2.2
+matplotlib>=3.8
+jupyterlab>=4.2

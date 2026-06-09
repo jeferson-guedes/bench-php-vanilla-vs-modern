@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Symfony (gerados)
+app/vendor/
+app/var/
+app/.env.local
+
+# Resultados de benchmark (CSV/JSON gerados em cada rodada)
+bench/results/*.csv
+bench/results/*.json
+
+# SO / editor
+.DS_Store
+*.log

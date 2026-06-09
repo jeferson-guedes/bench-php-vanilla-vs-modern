@@ -1,0 +1,16 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Kernel.php'
+            - '../src/Entity/'
+
+    # Controllers planos (sem AbstractController) precisam da tag para que os
+    # argumentos de action (ex.: EntityManagerInterface $em) sejam injetados.
+    App\Controller\:
+        resource: '../src/Controller/'
+        tags: ['controller.service_arguments']
