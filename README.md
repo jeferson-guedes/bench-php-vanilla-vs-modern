@@ -71,7 +71,7 @@ Carga: **64 conexões concorrentes, 12s por medição, warmup descartado, 4 work
 → Swoole/FrankenPHP (ganho real de ~3×). Escrita concorrente → FrankenPHP (atenção ao pooling).
 CPU-bound → ligue o JIT e o FPM clássico segura o tranco igual, com operação muito mais simples.
 
-📝 Análise completa no post: [`_posts/2026-06-09-benchmark-runtimes-php-fpm-frankenphp-swoole.md`](_posts/2026-06-09-benchmark-runtimes-php-fpm-frankenphp-swoole.md)
+📝 Análise completa no post: [`devto/benchmark-php-runtimes.md`](devto/benchmark-php-runtimes.md)
 
 ---
 

@@ -6,6 +6,7 @@ __pycache__/
 # Symfony (gerados)
 app/vendor/
 app/var/
+app/.env
 app/.env.local
 
 # Resultados de benchmark (CSV/JSON gerados em cada rodada)
