@@ -26,6 +26,14 @@ Ambiente: **PHP 8.4, Symfony 7.2, Doctrine ORM 3, MySQL 8, Docker 29.4 (macOS)**
 Carga: **64 conexões concorrentes, 12s por medição, warmup descartado, 4 workers por runtime**
 (igualados para um comparativo justo — veja a ressalva abaixo). Números de uma única rodada local.
 
+![Throughput por endpoint (req/s)](assets/img/throughput.png)
+
+![Latência p99 por endpoint (ms)](assets/img/latency_p99.png)
+
+![Speedup vs PHP-FPM](assets/img/speedup.png)
+
+> Gráficos gerados por [`bench/plot_results.py`](bench/plot_results.py) a partir do JSON salvo pelo load test. As tabelas abaixo trazem os mesmos números.
+
 ### Throughput — req/s (maior é melhor)
 
 | Endpoint | FPM + JIT | FrankenPHP | Swoole | Vencedor |
